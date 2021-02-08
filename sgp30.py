@@ -6,10 +6,21 @@ import busio
 import adafruit_sgp30
 import Adafruit_DHT as dht
 from math import e
+from prometheus_client import start_http_server, Gauge
+
  
 def get_absolute_humidity(temperature, relative_humidity):
     absolute_humidity_in_grams_per_m3 = (6.112 * (e**((17.67 * temperature) / (temperature + 243.5))) * relative_humidity * 2.1674) / (273.15 + temperature)
     return absolute_humidity_in_grams_per_m3
+
+def print_and_set_in_prometheus(current_time, co2, tvoc, temperature, humidity, abs_hum):
+    print("%s   eCO2 = %d ppm   TVOC = %d ppb   T = %.1f*C   H = %.1f%%   Abs.H = %.2fg/m3" % (
+         current_time, co2, tvoc, temperature, humidity, abs_hum))
+    temp_gauge.set(temperature)
+    hum_gauge.set(humidity)
+    co2_gauge.set(co2)
+    tvoc_gauge.set(tvoc)
+    abs_hum_gauge.set(abs_hum)
 
 
 i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
@@ -32,7 +43,15 @@ sgp30.set_iaq_humidity(get_absolute_humidity(temperature, humidity))
 elapsed_sec = 0
 baseline_eCO2 = sgp30.baseline_eCO2
 baseline_TVOC = sgp30.baseline_TVOC
- 
+
+#monitoring stuff
+temp_gauge = Gauge('temperature', 'Temperature')
+hum_gauge = Gauge('humidity', 'Relative Humidity')
+co2_gauge = Gauge('co2', 'CO2')
+tvoc_gauge = Gauge('tvoc', 'Total Volatile Organic Compounds')
+abs_hum_gauge = Gauge ('abs_hum', 'Absolute Humiditity')
+start_http_server(9222)
+
 while True:
     t = time.localtime()
     current_time = time.strftime("%d/%m/%Y %H:%M:%S", t)
@@ -40,9 +59,13 @@ while True:
     abs_hum = get_absolute_humidity(temperature, humidity)
     co2 = sgp30.eCO2
     tvoc = sgp30.TVOC
-     
-    print("%s   eCO2 = %d ppm   TVOC = %d ppb   T = %.1f*C   H = %.1f%%   Abs.H = %.2fg/m3" % (
-          current_time, co2, tvoc, temperature, humidity, abs_hum))
+    
+    print_and_set_in_prometheus(current_time, co2, tvoc, temperature, humidity, abs_hum) 
+    #print("%s   eCO2 = %d ppm   TVOC = %d ppb   T = %.1f*C   H = %.1f%%   Abs.H = %.2fg/m3" % (
+    #      current_time, co2, tvoc, temperature, humidity, abs_hum))
+    
+    #temp.set(temperature)
+    #hum.set(humidity)
     
     f = open("valuesSgp.txt", "a+")
     f.write("%s   eCO2 = %d ppm   TVOC = %d ppb   T = %.1f*C   H = %.1f%%   Abs.H = %.2fg/m3 \n" % (
