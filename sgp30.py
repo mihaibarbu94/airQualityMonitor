@@ -102,7 +102,8 @@ while True:
 
     print_and_set_in_prometheus(current_time, co2, tvoc, temperature, humidity, abs_hum)
 
-    f = open("valuesSgp" + current_date_time + ".txt", "a+")
+    file_name ="valuesSgp" + current_date_time + ".txt"
+    f = open(file_name ,"a+")
     f.write("%s   eCO2 = %d ppm   TVOC = %d ppb   T = %.1f*C   H = %.1f%%   Abs.H = %.2fg/m3 \n" % (
           current_time, co2, tvoc, temperature, humidity, abs_hum))
     f.close()
@@ -118,7 +119,7 @@ while True:
         print("**** Baseline values: eCO2 = 0x%x, TVOC = 0x%x, Baseline= %s"
             % (sgp30.baseline_eCO2, sgp30.baseline_TVOC, sgp30.get_iaq_baseline()))
 
-        f = open("valuesSgp2.txt", "a+")
+        f = open(file_name, "a+")
         f.write("**** Baseline values: eCO2 = 0x%x, TVOC = 0x%x, Baseline= %s \n"
             % (sgp30.baseline_eCO2, sgp30.baseline_TVOC, sgp30.get_iaq_baseline()))
         f.close()
